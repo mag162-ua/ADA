@@ -11,6 +11,11 @@ using namespace std;
 int dim_n;
 int dim_m;
 
+bool ignore_naive=false;
+bool t=false;
+bool p2D=false;
+bool b_file=false;
+
 struct punto{
     int x=0;
     int y=0;
@@ -38,14 +43,32 @@ void dibujar_mapa(vector< vector<int>> &mapa){
     }
 }
 
+void dibujar_memo_tabla(vector< vector<int>> &tabla_memo){
+    for(int i=0;i<dim_n;i++){
+        for(int j=0;j<dim_m;j++){
+            if(tabla_memo[i][j]){
+                if(tabla_memo[i][j]==INT_MAX){
+                    cout<<"X ";
+                }
+                else{
+                    cout<<tabla_memo[i][j]<<" ";
+                }
+            }
+            else{
+                cout<<"- ";
+            }
+        }
+        cout<<endl;
+    }
+}
+
 int maze_naive(int x,int y, vector< vector<int>> &mapa,int coste){
     int coste_perpendicular=INT_MAX;
     int coste_arriba=INT_MAX;
     int coste_izquierda=INT_MAX;
     
-    cout<<"b:"<<x<<" "<<y<<" "<<mapa[x][y]<<" "<<coste<<endl;
+    //cout<<"b:"<<x<<" "<<y<<" "<<mapa[x][y]<<" "<<coste<<endl;
     if(x==0 && y==0){
-        cout<<"a:"<<coste<<endl;
         return coste+mapa[x][y];
     }
 
@@ -79,13 +102,76 @@ int maze_naive(int x,int y, vector< vector<int>> &mapa,int coste){
         return INT_MAX;
     }
 
-    cout<<"x: "<<x<<" y: "<<y<<"   "<<coste_izquierda<<" "<<coste_arriba<<" "<<coste_perpendicular<<endl;
+    //cout<<"x: "<<x<<" y: "<<y<<"   "<<coste_izquierda<<" "<<coste_arriba<<" "<<coste_perpendicular<<endl;
     
     coste=min(coste_izquierda, min(coste_perpendicular,coste_arriba));
     if(x==dim_n-1 && y==dim_m-1 && coste==INT_MAX){
         return 0;
     }
     return coste;
+}
+
+int maze_memo(int x,int y,vector< vector<int>> &mapa,int coste,vector< vector<int>> &tabla_coste){
+    int coste_perpendicular=INT_MAX;
+    int coste_abajo=INT_MAX;
+    int coste_derecha=INT_MAX;
+    cout<<endl;
+    dibujar_memo_tabla(tabla_coste);
+    /*if(x==dim_n-1 && y==dim_m-2){
+        cout<<"hola"<<tabla_coste[x][y]<<endl;
+    }*/
+    //cout<<endl<<endl;
+    //cout<<"valor tabla: "<<tabla_coste[x][y]<<endl;
+    
+    if(x==dim_n-1 && y==dim_m-1){
+        cout<<mapa[x][y]<<endl;
+        tabla_coste[x][y]=coste+mapa[x][y];
+        return coste;
+    }
+    
+    if(tabla_coste[x][y]){
+        return tabla_coste[x][y]=min(tabla_coste[x][y],coste+mapa[x][y]);
+    }
+    
+    if(x+1<dim_n && y+1<dim_m && !mapa[x+1][y+1]){
+        tabla_coste[x+1][y+1]=INT_MAX;
+    }
+    if(x+1<dim_n && y+1<dim_m && !mapa[x][y+1]){
+        tabla_coste[x][y+1]=INT_MAX;
+    }
+    if(x+1<dim_n && y+1<dim_m && !mapa[x+1][y]){
+        tabla_coste[x+1][y]=INT_MAX;
+    }
+
+    bool perpendicular = (x+1<dim_n && y+1<dim_m && mapa[x+1][y+1]);
+    bool derecha = (x+1<dim_n && y+1<dim_m && mapa[x][y+1]);
+    bool abajo = (x+1<dim_n && y+1<dim_m && mapa[x+1][y]);
+
+    if(perpendicular){
+        tabla_coste[x][y]=coste+mapa[x][y];
+        coste_perpendicular=maze_memo(x+1,y+1,mapa,coste+mapa[x][y],tabla_coste);
+    }
+    if(abajo){
+        tabla_coste[x][y]=coste+mapa[x][y];
+        coste_abajo=maze_memo(x+1,y,mapa,coste+mapa[x][y],tabla_coste);
+    }
+    if(derecha){
+        tabla_coste[x][y]=coste+mapa[x][y];
+        coste_derecha=maze_memo(x,y+1,mapa,coste+mapa[x][y],tabla_coste);
+    }
+    if(!derecha && !perpendicular && !abajo){
+        tabla_coste[x][y]=coste+mapa[x][y];
+        return INT_MAX;
+    }
+
+    cout<<endl;
+    
+    return tabla_coste[dim_n-1][dim_m-1];
+        
+    
+    
+    //return coste = min(coste_perpendicular,min(coste_abajo,coste_derecha));
+
 }
 
 void abrir_fichero(string file_name){
@@ -108,24 +194,17 @@ void abrir_fichero(string file_name){
             }
         }
 
-        /*int i=0;
-        int j=0;
-        while(file >> num){
-            if(j>=dim_n){
-                j=0;
-                i++;
-            }
-            matriz[i*dim_n+j];
-        }*/
-
-        //struct punto p;
-        
-        int pos_init_x=dim_n-1;
-        int pos_init_y=dim_m-1;
+        int pos_init_x_naive=dim_n-1;
+        int pos_init_y_naive=dim_m-1;
 
         dibujar_mapa(matriz);
-        cout<<maze_naive(pos_init_x,pos_init_y,matriz,0)<<endl;
-        //matriz[dim_n-1][dim_m-1]
+        //cout<<maze_naive(pos_init_x_naive,pos_init_y_naive,matriz,0)<<endl;
+        int pos_init_x_memo=0;
+        int pos_init_y_memo=0;
+        vector< vector<int>> tabla_memo(dim_n,vector<int>(dim_m));
+        cout<<maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,0,tabla_memo)<<endl;
+        //dibujar_memo_tabla(tabla_memo);
+        cout<<tabla_memo[dim_n-1][dim_m-2];
     }
     else{
         cout<<"Error apertura de fichero"<<endl;
@@ -135,10 +214,6 @@ void abrir_fichero(string file_name){
 int main(int argn,char* argv[]){
 
     string file;
-    bool ignore_naive=false;
-    bool t=false;
-    bool p2D=false;
-    bool b_file=false;
 
     if(argn<3){
         cout<<"Error de argumento, faltan argumentos"<<endl;
