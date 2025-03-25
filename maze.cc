@@ -49,6 +49,7 @@ void dibujar_memo_tabla(vector< vector<int>> &tabla_memo){
             if(tabla_memo[i][j]){
                 if(tabla_memo[i][j]==-1){
                     cout<<"X ";
+                    //cout<<tabla_memo[i][j]<<" ";
                 }
                 else{
                     cout<<tabla_memo[i][j]<<" ";
@@ -56,6 +57,7 @@ void dibujar_memo_tabla(vector< vector<int>> &tabla_memo){
             }
             else{
                 cout<<"- ";
+                //cout<<tabla_memo[i][j]<<" ";
             }
         }
         cout<<endl;
@@ -111,58 +113,48 @@ int maze_naive(int x,int y, vector< vector<int>> &mapa,int coste){
     return coste;
 }
 
-int maze_memo(int x,int y,vector< vector<int>> &mapa,int coste,vector< vector<int>> &tabla_coste){
-    int coste_perpendicular=INT_MAX;
-    int coste_abajo=INT_MAX;
-    int coste_derecha=INT_MAX;
+int maze_memo(int x,int y,vector< vector<int>> &mapa,vector< vector<int>> &tabla_coste){
     
+    int coste_perpendicular=INT_MAX;
+    int coste_arriba=INT_MAX;
+    int coste_izquierda=INT_MAX;
+
+    if(x==0 && y==0){
+        return tabla_coste[x][y]=mapa[x][y];
+        return mapa[x][y];
+    }
+
     if(mapa[x][y]==0){
+        tabla_coste[x][y]=-1;
+        return INT_MAX;
+    }
+    
+    bool perpendicular= (x-1>=0 && y-1>=0);
+    bool arriba= (x-1>=0);
+    bool izquierda= (y-1>=0);
+
+    if(perpendicular){
+        coste_perpendicular=maze_memo(x-1,y-1,mapa,tabla_coste);
+    }
+    if(arriba){
+        coste_arriba=maze_memo(x-1,y,mapa,tabla_coste);
+    }
+    if(izquierda){
+        coste_izquierda=maze_memo(x,y-1,mapa,tabla_coste);
+    }
+
+    int coste=min(coste_perpendicular,min(coste_arriba,coste_izquierda));
+
+    if(x==dim_n-1 && y==dim_m-1 && coste==INT_MAX){
         tabla_coste[x][y]=-1;
         return 0;
     }
-
-    if(x==dim_n-1 && y==dim_m-1){
-        if(tabla_coste[x][y]){
-            return tabla_coste[x][y]=min(tabla_coste[x][y],coste+mapa[x][y]);
-        }
-        tabla_coste[x][y]=coste+mapa[x][y];
-        return tabla_coste[x][y];
-    }
-    
-    if(tabla_coste[x][y]){
-        return tabla_coste[x][y]=min(tabla_coste[x][y],coste+mapa[x][y]);
+    if(coste==INT_MAX){
+        tabla_coste[x][y]=-1;
+        return INT_MAX;
     }
 
-    bool perpendicular = (x+1<dim_n && y+1<dim_m /*&& mapa[x+1][y+1]*/);
-    bool derecha = (y+1<dim_m /*&& mapa[x][y+1]*/);
-    bool abajo = (x+1<dim_n /*&& mapa[x+1][y]*/);
-
-    if(perpendicular){
-        tabla_coste[x][y]=coste+mapa[x][y];
-        coste_perpendicular=maze_memo(x+1,y+1,mapa,coste+mapa[x][y],tabla_coste);
-    }
-    else if(x+1<dim_n && y+1<dim_m){
-        tabla_coste[x+1][y+1]=-1;
-    }
-
-    if(abajo){
-        tabla_coste[x][y]=coste+mapa[x][y];
-        coste_abajo=maze_memo(x+1,y,mapa,coste+mapa[x][y],tabla_coste);
-    }
-    else if(x+1<dim_n){
-        tabla_coste[x+1][y]=-1;
-    }
-
-    if(derecha){
-        tabla_coste[x][y]=coste+mapa[x][y];
-        coste_derecha=maze_memo(x,y+1,mapa,coste+mapa[x][y],tabla_coste);
-    }
-    else if(y+1<dim_m){
-        tabla_coste[x][y+1]=-1;
-    }
-    
-    return tabla_coste[dim_n-1][dim_m-1];
-
+    return tabla_coste[x][y]=coste+mapa[x][y];
 }
 
 void abrir_fichero(string file_name){
@@ -191,8 +183,8 @@ void abrir_fichero(string file_name){
         dibujar_mapa(matriz);
 
         //cout<<maze_naive(pos_init_x_naive,pos_init_y_naive,matriz,0)<<endl;
-        int pos_init_x_memo=0;
-        int pos_init_y_memo=0;
+        int pos_init_x_memo=dim_n-1;
+        int pos_init_y_memo=dim_m-1;
         vector< vector<int>> tabla_memo(dim_n,vector<int>(dim_m));
 
         //cout<<maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,0,tabla_memo)<<endl;
@@ -200,7 +192,7 @@ void abrir_fichero(string file_name){
         //cout<<tabla_memo[dim_n-1][dim_m-2];
 
         cout<<maze_naive(pos_init_x_naive,pos_init_y_naive,matriz,0)<<" "
-        <<maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,0,tabla_memo)<<endl;
+        <<maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,tabla_memo)<<endl;
 
         cout<<endl;
         dibujar_memo_tabla(tabla_memo);
