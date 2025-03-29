@@ -1,3 +1,5 @@
+//MARTÍN AZNAR GARCÍA, 51797315G
+
 #include<iostream>
 #include<fstream>
 #include<vector>
@@ -63,63 +65,60 @@ void dibujar_memo_tabla(vector< vector<int>> &tabla_memo){
         cout<<endl;
     }
 }
+void dibujar_camino(vector< vector<int>> &mapa,vector< vector<int>> &camino){
+    for(int i=0;i<dim_n;i++){
+        for(int j=0;j<dim_m;j++){
+            if(camino[i][j]){
+                cout<<"* ";
+            }
+            else{
+                cout<<mapa[i][j]<<" ";
+            }
+        }
+        cout<<endl;
+    }
+}
 
 int maze_naive(int x,int y, vector< vector<int>> &mapa,int coste){
     int coste_perpendicular=INT_MAX;
     int coste_arriba=INT_MAX;
     int coste_izquierda=INT_MAX;
     
-    //cout<<"b:"<<x<<" "<<y<<" "<<mapa[x][y]<<" "<<coste<<endl;
     if(x==0 && y==0){
         return coste+mapa[x][y];
     }
 
     bool perpendicular=(x-1>=0 && y-1>=0 && mapa[x-1][y-1]);
-
-    if(perpendicular){
-
-        //cout<<"perpendicular_movimiento: "<<endl;
-        coste_perpendicular=maze_naive(x-1,y-1,mapa,coste+mapa[x][y]);
-
-    }
-
     bool arriba=(x-1>=0 && y>=0 && mapa[x-1][y]);
-
-    if(arriba){
-
-        //cout<<"arriba_movimiento: "<<endl;
-        coste_arriba=maze_naive(x-1,y,mapa,coste+mapa[x][y]);
-
-    }
-
     bool izquierda=(x>=0 && y-1>=0 && mapa[x][y-1]);
 
-    if(izquierda){
-
-        //cout<<"izquierda_movimiento: "<<endl;
-        coste_izquierda=maze_naive(x,y-1,mapa,coste+mapa[x][y]);
-
+    if(perpendicular){ //Calculo posición perpendicular
+        coste_perpendicular=maze_naive(x-1,y-1,mapa,coste+mapa[x][y]);
     }
-    if(!perpendicular && !arriba && !izquierda){
+    if(arriba){ //Calculo posición arriba
+        coste_arriba=maze_naive(x-1,y,mapa,coste+mapa[x][y]);
+    }
+    if(izquierda){ //Calculo posición izquierda
+        coste_izquierda=maze_naive(x,y-1,mapa,coste+mapa[x][y]);
+    }
+    if(!perpendicular && !arriba && !izquierda){ //Caso ningun movimiento posible
         return INT_MAX;
     }
-
-    //cout<<"x: "<<x<<" y: "<<y<<"   "<<coste_izquierda<<" "<<coste_arriba<<" "<<coste_perpendicular<<endl;
     
-    coste=min(coste_izquierda, min(coste_perpendicular,coste_arriba));
-    if(x==dim_n-1 && y==dim_m-1 && coste==INT_MAX){
+    coste=min(coste_izquierda, min(coste_perpendicular,coste_arriba)); //Minimo coste
+    if(x==dim_n-1 && y==dim_m-1 && coste==INT_MAX){ //Si no hay camino posible 0
         return 0;
     }
     return coste;
 }
 
-int maze_memo(int x,int y,vector< vector<int>> &mapa,vector< vector<int>> &tabla_coste){
+int maze_memo(int x,int y,vector< vector<int>> &mapa,vector< vector<int>> &tabla_coste,vector< vector<int>> &camino){
     
     int coste_perpendicular=INT_MAX;
     int coste_arriba=INT_MAX;
     int coste_izquierda=INT_MAX;
 
-    if(x==0 && y==0){
+    if(x==0 && y==0){ //
         return tabla_coste[x][y]=mapa[x][y];
         return mapa[x][y];
     }
@@ -134,16 +133,27 @@ int maze_memo(int x,int y,vector< vector<int>> &mapa,vector< vector<int>> &tabla
     bool izquierda= (y-1>=0);
 
     if(perpendicular){
-        coste_perpendicular=maze_memo(x-1,y-1,mapa,tabla_coste);
+        coste_perpendicular=maze_memo(x-1,y-1,mapa,tabla_coste,camino);
     }
     if(arriba){
-        coste_arriba=maze_memo(x-1,y,mapa,tabla_coste);
+        coste_arriba=maze_memo(x-1,y,mapa,tabla_coste,camino);
     }
     if(izquierda){
-        coste_izquierda=maze_memo(x,y-1,mapa,tabla_coste);
+        coste_izquierda=maze_memo(x,y-1,mapa,tabla_coste,camino);
     }
 
     int coste=min(coste_perpendicular,min(coste_arriba,coste_izquierda));
+    if(coste!=INT_MAX){
+        if(coste==coste_perpendicular && perpendicular){
+            camino[x-1][y-1]=1;
+        }
+        else if(coste==coste_arriba && arriba){
+            camino[x-1][y]=1;
+        }
+        else if(coste==coste_izquierda && izquierda){
+            camino[x][y-1]=1;
+        }
+    }
 
     if(x==dim_n-1 && y==dim_m-1 && coste==INT_MAX){
         tabla_coste[x][y]=-1;
@@ -167,8 +177,6 @@ void abrir_fichero(string file_name){
         file >> dim_n;
         file >> dim_m;
 
-        //int matriz[dim_n*dim_m];
-
         vector< vector<int>> matriz(dim_n,vector<int>(dim_m));
 
         for(int i=0;i<dim_n;i++){
@@ -180,25 +188,47 @@ void abrir_fichero(string file_name){
         int pos_init_x_naive=dim_n-1;
         int pos_init_y_naive=dim_m-1;
 
-        dibujar_mapa(matriz);
+        //dibujar_mapa(matriz);
 
-        //cout<<maze_naive(pos_init_x_naive,pos_init_y_naive,matriz,0)<<endl;
         int pos_init_x_memo=dim_n-1;
         int pos_init_y_memo=dim_m-1;
         vector< vector<int>> tabla_memo(dim_n,vector<int>(dim_m));
-
-        //cout<<maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,0,tabla_memo)<<endl;
+        vector< vector<int>> camino(dim_n,vector<int>(dim_m));
         
-        //cout<<tabla_memo[dim_n-1][dim_m-2];
+        camino[0][0]=1;
+        camino[dim_n-1][dim_m-1]=1;
 
-        cout<<maze_naive(pos_init_x_naive,pos_init_y_naive,matriz,0)<<" "
-        <<maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,tabla_memo)<<endl;
-
-        cout<<endl;
-        dibujar_memo_tabla(tabla_memo);
+        if(ignore_naive){
+            cout<<"- ";
+        }
+        else{
+            cout<<maze_naive(pos_init_x_naive,pos_init_y_naive,matriz,0)<<" ";
+        }
+        int coste_memo=maze_memo(pos_init_x_memo,pos_init_y_memo,matriz,tabla_memo,camino);
+        cout<<coste_memo<<" ";
+        cout<<'?'<<" ";
+        cout<<'?'<<endl;
+        if(p2D){
+            cout<<'?'<<endl;
+            /*if(coste_memo==0){
+                cout<<0<<endl;
+            }
+            else{
+                dibujar_camino(matriz,camino);
+            }*/
+        }
+        if(t){
+            cout<<'?'<<endl;
+            /*cout<<"Memoization table:"<<endl;
+            dibujar_memo_tabla(tabla_memo);
+            cout<<endl;*/
+        }
+        
     }
     else{
-        cout<<"Error apertura de fichero"<<endl;
+        cerr<<"ERROR: can't open file: "<<file_name<<endl
+            <<"Usage:"<<endl
+            <<"maze [--p2D] [-t] [--ignore-naive] -f file"<<endl;
     }
 }
 
@@ -207,7 +237,8 @@ int main(int argn,char* argv[]){
     string file;
 
     if(argn<3){
-        cout<<"Error de argumento, faltan argumentos"<<endl;
+        cerr<<"Usage:"<<endl
+            <<"maze [--p2D] [-t] [--ignore-naive] -f file"<<endl;
         return -1;
     }
 
@@ -229,17 +260,25 @@ int main(int argn,char* argv[]){
                 b_file=true;
             }
             else{
-                cout<<"Error de argumento, faltan nombre del archivo"<<endl;
+               // cerr<<"Error de argumento, falta [Nombre_archivo]: -f [Nombre_archivo]"<<endl;
+               cerr<<"ERROR: missing filename."<<endl
+                     <<"Usage:"<<endl
+                     <<"maze [--p2D] [-t] [--ignore-naive] -f file"<<endl;
                 return -1;
             }
         }
         else{
-            cout<<"Error de argumento, argumento incorrecto"<<endl;
+            cerr<<"ERROR: unknow option "<<argv[i]<<"."<<endl
+                <<"Usage:"<<endl
+                <<"maze [--p2D] [-t] [--ignore-naive] -f file"<<endl;
+                return -1;
         }
 
     }
     if(!b_file){
-        cout<<"Error de argumento, faltan nombre del archivo"<<endl;
+        cerr<<"ERROR: missing filename."<<endl
+            <<"Usage:"<<endl
+            <<"maze [--p2D] [-t] [--ignore-naive] -f file"<<endl;
         return -1;
     }
 
