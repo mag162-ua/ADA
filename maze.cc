@@ -254,6 +254,50 @@ int maze_it_matrix(int x,int y,vector< vector<int>> &mapa,vector< vector<int>> &
     return tabla_coste[x][y];
 }
 
+int maze_vector(int x, int y, vector<vector<int>> &mapa) {
+    
+    if(mapa[0][0]==0){
+        return 0;
+    }
+
+    vector<int> previo(dim_m, MAX_VALOR-1), actual(dim_m, MAX_VALOR-1); 
+
+    previo[0] = mapa[0][0];
+    actual[0] = mapa[0][0];
+
+    for (int i = 0; i <= x; i++) {
+        for (int j = 0; j <= y; j++) {
+            if (mapa[i][j] == 0) {
+                actual[j] = MAX_VALOR-1;
+                continue;
+            }
+
+            int coste_perpendicular = MAX_VALOR;
+            int coste_arriba = MAX_VALOR;
+            int coste_izquierda = MAX_VALOR;
+
+            if(i>0 && j>0){
+                coste_perpendicular = previo[j-1]+mapa[i][j];
+            }
+            if(i>0){
+                coste_arriba=previo[j]+mapa[i][j];
+            }
+            if(j>0){
+                coste_izquierda=actual[j-1]+mapa[i][j];
+            }
+            if(i>0 || j>0){
+                actual[j] = min(coste_perpendicular, min(coste_arriba, coste_izquierda));
+            }
+
+            //cout<<"pos_i: "<<i<<" pos_j: "<<j<<" p: "<<coste_perpendicular<<" a: "<<coste_arriba<<" i:"<<coste_izquierda<<endl<<actual[j]<<" "<<previo[j]<<endl;
+        }
+
+        previo = actual; // Avanzamos a la siguiente fila
+    }
+
+    return (previo[y] >= MAX_VALOR-1) ? 0 : previo[y]; 
+}
+
 void abrir_fichero(string file_name){
 
     ifstream file(file_name);
@@ -294,7 +338,7 @@ void abrir_fichero(string file_name){
         cout<<coste_memo<<" ";
         int coste_it_matriz=maze_it_matrix(pos_init_x,pos_init_y,matriz,tabla_it_matriz);
         cout<<coste_it_matriz<<" ";
-        cout<<'?'<<endl;
+        cout<<maze_vector(pos_init_x,pos_init_y,matriz)<<endl;
         if(p2D){
             //cout<<'?'<<endl;
             if(coste_memo==0){
