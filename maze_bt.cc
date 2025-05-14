@@ -73,23 +73,30 @@ void mostrar_pasos(){
     for(int i=0;i<mejor_camino_pasos.size();i++){
         cout<<mejor_camino_pasos[i]+1;
     }
+
     cout<<">"<<endl;
 }
 
 int cotaOptimista(int x, int y) {
     int dx = abs(dim_n-1 - x);
     int dy = abs(dim_m-1 - y);
-    return max(dx, dy); // como se puede mover en diagonal, es lo mínimo posible
+    return max(dx,dy);
 }
 
-int cotaPesimista(int x, int y) {
-    int dx = abs(dim_n-1 - x);
-    int dy = abs(dim_m-1 - y);
-    return dx + dy; // sobreestima, útil como límite
+int cotaPesimista(int x, int y,vector< vector<int>> &mapa) {
+    int nodos_posibles;
+    for(int i=x;i<dim_n;i++){
+        for(int j=y;j<dim_m;j++){
+            if(mapa[i][j]!=0){
+                nodos_posibles++;
+            }
+        }
+    }
+    return nodos_posibles;
 }
 
 void backtrack(int x, int y, vector< vector<int>> &mapa, vector< vector<bool>> &visitado, vector<pair<int,int>> &camino, vector<int> &pasos){
-    visitados++;
+    
 
     if(x == dim_n-1 && y == dim_m-1){
         hojas_visitadas++;
@@ -102,10 +109,15 @@ void backtrack(int x, int y, vector< vector<int>> &mapa, vector< vector<bool>> &
 
         return;
     }
-
-    int mayorCamino = camino.size() + cotaPesimista(x, y);
+    visitados++;
+    /*int mayorCamino = camino.size() + cotaPesimista(x, y,mapa);
     if (mayorCamino >= mejorPeso) {
         descartados_no_prometedores++;
+        return;
+    }*/
+
+    if(camino.size() >= mejorPeso){
+        descartados_no_factibles++;
         return;
     }
 
@@ -349,7 +361,12 @@ void abrir_fichero(string file_name){
         }
         
         if(p){
-            mostrar_pasos();
+            if(mejorPeso==0){
+                cout<<"<0>"<<endl;
+            }
+            else{
+                mostrar_pasos();
+            }
         }
     }
     else{
