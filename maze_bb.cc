@@ -78,9 +78,9 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste){
         //explorados++;
         //soluciones++;
         hojas++;
-        if(coste + matriz[pos_x][pos_y].valor < mejorPeso){
+        if(coste < mejorPeso){
             
-            mejorPeso = coste + matriz[pos_x][pos_y].valor;
+            mejorPeso = coste;
             //cota_pesimista = mejorPeso;
             /*mejorPasos.clear();
             for(const auto& paso : pasos){
@@ -161,7 +161,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste){
         //soluciones++;
         //mejorPeso = min(mejorPeso, n_actual.coste);
     //}
-    
+    return llega_al_final;
 }
 
 void abrir_fichero(string file_name){
