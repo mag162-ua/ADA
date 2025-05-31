@@ -48,7 +48,7 @@ int mejorPeso = MAX_VALOR;
 vector<int> mejorPasos;
 vector<pair<int, int> > mejorCamino;
 
-void mostrarmatriz(vector<vector<Nodo> > &matriz){
+void mostrarmatriz(const vector<vector<Nodo> > &matriz){
     for(int i=0;i<dim_x;i++){
             for(int j=0;j<dim_y;j++){ 
                 cout<<matriz[i][j].valor<<" ";
@@ -97,10 +97,10 @@ void mejorcamino(vector<vector<Nodo> > &matriz){
     }
 }
 
-void dibujar_p2D(vector<vector<Nodo> > &matriz){
+void dibujar_p2D(const vector<vector<Nodo> > &matriz){
     for(int i=0;i<dim_x;i++){
         for(int j=0;j<dim_y;j++){
-            if(find(mejorCamino.begin(), mejorCamino.end(), make_pair(i, j)) != mejorCamino.end()){
+            if(matriz[i][j].visitado){
                 cout<<"*";
             }
             else{
@@ -112,17 +112,10 @@ void dibujar_p2D(vector<vector<Nodo> > &matriz){
     }
 }
 
-bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vector<int> &pasos, vector<pair<int, int> > &camino){
+bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vector<int> &pasos/*, vector<pair<int, int> > &camino*/){
 
     //Nodo n_actual = matriz[pos_x][pos_y];
     visitados++;
-
-    if((pos_x == 0 && pos_y == 0 && !matriz[pos_x][pos_y].Valido) || 
-       (pos_x == dim_x-1 && pos_y == dim_y-1 && !matriz[pos_x][pos_y].Valido)){
-        mejorPeso = 0;
-        no_factibles++;
-        return false;
-    }
 
     if(!matriz[pos_x][pos_y].Valido){
         no_factibles++;
@@ -143,7 +136,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
             mejorPasos.clear();
             mejorPasos = pasos;
             mejorCamino.clear();
-            mejorCamino = camino;
+            //mejorCamino = camino;
             mejorCamino.push_back(make_pair(pos_x, pos_y));
             soluciones_actualizadas++;
         }
@@ -163,7 +156,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(4);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x+1, pos_y+1, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x+1, pos_y+1, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -172,7 +165,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(5);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x+1, pos_y, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x+1, pos_y, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -181,7 +174,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(3);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x, pos_y+1, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x, pos_y+1, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -189,8 +182,8 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         //Mover hacia arriba y a la derecha
         explorados++;
         pasos.push_back(2);
-        //camino.push_back(make_pair(pos_x, pos_y));  
-        llega_al_final = maze_bb(pos_x-1, pos_y+1, matriz, coste, pasos, camino) || llega_al_final;
+        //camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x-1, pos_y+1, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -199,7 +192,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(6);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x+1, pos_y-1, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x+1, pos_y-1, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -208,7 +201,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(1);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x-1, pos_y, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x-1, pos_y, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -217,7 +210,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(7);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x, pos_y-1, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x, pos_y-1, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -226,7 +219,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(8);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x-1, pos_y-1, matriz, coste, pasos, camino) || llega_al_final;
+        llega_al_final = maze_bb(pos_x-1, pos_y-1, matriz, coste, pasos/*, camino*/) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -241,7 +234,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
     return llega_al_final;
 }
 
-void abrir_fichero(string file_name){
+void abrir_fichero(const string file_name){
 
     ifstream file(file_name.c_str());
 
@@ -287,7 +280,10 @@ void abrir_fichero(string file_name){
         vector<int> pasos;
         vector<pair<int, int> > camino;
         clock_t start_time = clock();
-        maze_bb(pos_init_x, pos_init_y, matriz, coste_inicial, pasos, camino);
+        if(!matriz[0][0].Valido || !matriz[dim_x-1][dim_y-1].Valido){
+            mejorPeso = 0;
+        }
+        maze_bb(pos_init_x, pos_init_y, matriz, coste_inicial, pasos/*, camino*/);
         clock_t end_time = clock();
         printf("Mejor peso: %d\n", mejorPeso);
         cout<<(end_time - start_time) * 1000.00 / (double)CLOCKS_PER_SEC << " seconds" << endl;
