@@ -4,6 +4,10 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <utility> // Para std::pair
+#include <ctime>
+
 
 using namespace std;
 
@@ -36,13 +40,13 @@ struct Nodo{
     //int coste; //Coste mínimo hasta este nodo
 	bool Valido; //Es valido?
 	int cota_positiva; //Menor distancia hasta el destino
-    //bool mejor; //Es el mejor nodo hasta ahora
+    bool mejor; //Es el mejor nodo hasta ahora
     bool visitado; //Ha sido visitado?
 };
 
 int mejorPeso = MAX_VALOR; 
 vector<int> mejorPasos;
-vector<Nodo> pasos;
+vector<pair<int, int> > mejorCamino;
 
 void mostrarmatriz(vector<vector<Nodo> > &matriz){
     for(int i=0;i<dim_x;i++){
@@ -53,15 +57,69 @@ void mostrarmatriz(vector<vector<Nodo> > &matriz){
         }
     
 }
+/*void mejorcamino(vector<vector<Nodo> > &matriz){
+    //cout<<"a :"<<mejorPeso<<" "<<mejorPasos.size()<<endl;
+    int pos_ini_x = 0;
+    int pos_ini_y = 0;
+    if(mejorPeso != MAX_VALOR){
+        matriz[pos_ini_x][pos_ini_y].visitado = true;
+        //cout<<"Mejor camino: ";
+        for(int i=0;i<mejorPasos.size();i++){
+            //cout<<"("<<pos_ini_x<<", "<<pos_ini_y<<") "<<endl;
+            //cout<<mejorPasos[i]<<" "<<endl;
+            switch (mejorPasos[i]) {
+                case 1: //arriba
+                    matriz[--pos_ini_x][pos_ini_y].visitado = true;
+                    break;
+                case 2: //arriba derecha
+                    matriz[--pos_ini_x][++pos_ini_y].visitado = true;
+                    break;
+                case 3: //derecha
+                    matriz[pos_ini_x][++pos_ini_y].visitado = true;
+                    break;
+                case 4: //abajo derecha
+                    matriz[++pos_ini_x][++pos_ini_y].visitado = true;
+                    break;
+                case 5: //abajo
+                    matriz[++pos_ini_x][pos_ini_y].visitado = true;
+                    break;
+                case 6: //abajo izquierda
+                    matriz[++pos_ini_x][--pos_ini_y].visitado = true;
+                    break;
+                case 7: //izquierda
+                    matriz[pos_ini_x][--pos_ini_y].visitado = true;
+                    break;
+                case 8: //arriba izquierda
+                    matriz[--pos_ini_x][--pos_ini_y].visitado = true;
+                    break;
+            }
+        }  
+    }
+}*/
 
-bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste){
+void dibujar_p2D(vector<vector<Nodo> > &matriz){
+    for(int i=0;i<dim_x;i++){
+        for(int j=0;j<dim_y;j++){
+            if(find(mejorCamino.begin(), mejorCamino.end(), make_pair(i, j)) != mejorCamino.end()){
+                cout<<"*";
+            }
+            else{
+                cout<<matriz[i][j].valor;
+            }
+            
+        }
+        cout<<endl;
+    }
+}
+
+bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vector<int> &pasos, vector<pair<int, int> > &camino){
 
     //Nodo n_actual = matriz[pos_x][pos_y];
-    
     visitados++;
 
     if((pos_x == 0 && pos_y == 0 && !matriz[pos_x][pos_y].Valido) || 
        (pos_x == dim_x-1 && pos_y == dim_y-1 && !matriz[pos_x][pos_y].Valido)){
+        mejorPeso = 0;
         no_factibles++;
         return false;
     }
@@ -70,7 +128,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste){
         no_factibles++;
         return false;
     }
-    if(matriz[pos_x][pos_y].cota_positiva + coste + matriz[pos_x][pos_y].valor >= mejorPeso){
+    if(matriz[pos_x][pos_y].cota_positiva + coste>= mejorPeso){
         no_prometedores++;
         return false;
     }
@@ -78,89 +136,108 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste){
         //explorados++;
         //soluciones++;
         hojas++;
-        if(coste < mejorPeso){
-            
-            mejorPeso = coste;
+        if(coste + matriz[pos_x][pos_y].valor < mejorPeso){
+
+            mejorPeso = coste + matriz[pos_x][pos_y].valor;
             //cota_pesimista = mejorPeso;
-            /*mejorPasos.clear();
-            for(const auto& paso : pasos){
-                mejorPasos.push_back(paso.valor);
-            }
-            mejorPasos.push_back(matriz[pos_x][pos_y].valor);*/
+            mejorPasos.clear();
+            mejorPasos = pasos;
+            mejorCamino.clear();
+            mejorCamino = camino;
+            mejorCamino.push_back(make_pair(pos_x, pos_y));
             soluciones_actualizadas++;
         }
         if (mejorPeso < cota_pesimista) {
             cota_pesimista = mejorPeso;
-            soluciones_cpesimista++; // <--- nbest-solution-updated-from-pessimistic-bound
+            soluciones_cpesimista++;
         }
         return true;
     }
 
-    
-    //cout<<"Cota pesimista: "<<cota_pesimista<<endl;
-    cout<<"Visitando nodo ("<<pos_x<<", "<<pos_y<<") con coste "<<coste<<endl;
     matriz[pos_x][pos_y].visitado = true;
     coste += matriz[pos_x][pos_y].valor;
     bool llega_al_final = false;;
 
-    if(pos_x < dim_x-1 && pos_y < dim_y-1 && !matriz[pos_x+1][pos_y].visitado && matriz[pos_x+1][pos_y+1].Valido){
+    if(pos_x < dim_x-1 && pos_y < dim_y-1 && !matriz[pos_x+1][pos_y+1].visitado && matriz[pos_x+1][pos_y+1].Valido){
         //Mover hacia abajo y a la derecha
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x+1, pos_y+1, matriz, coste);
+        pasos.push_back(4);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x+1, pos_y+1, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_x < dim_x-1 && !matriz[pos_x+1][pos_y].visitado && matriz[pos_x+1][pos_y].Valido){
         //Mover hacia abajo
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x+1, pos_y, matriz, coste);
+        pasos.push_back(5);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x+1, pos_y, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_y < dim_y-1 && !matriz[pos_x][pos_y+1].visitado && matriz[pos_x][pos_y+1].Valido){
         //Mover hacia la derecha
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x, pos_y+1, matriz, coste);
+        pasos.push_back(3);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x, pos_y+1, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_x > 0 && pos_y < dim_y-1 && !matriz[pos_x-1][pos_y+1].visitado && matriz[pos_x-1][pos_y+1].Valido){
         //Mover hacia arriba y a la derecha
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x-1, pos_y+1, matriz, coste);
+        pasos.push_back(2);
+        camino.push_back(make_pair(pos_x, pos_y));  
+        llega_al_final = maze_bb(pos_x-1, pos_y+1, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_y > 0 && pos_x < dim_x-1 && !matriz[pos_x+1][pos_y-1].visitado && matriz[pos_x+1][pos_y-1].Valido){
         //Mover hacia abajo y a la izquierda
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x+1, pos_y-1, matriz, coste);
+        pasos.push_back(6);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x+1, pos_y-1, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_x > 0 && !matriz[pos_x-1][pos_y].visitado && matriz[pos_x-1][pos_y].Valido){
         //Mover hacia arriba
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x-1, pos_y, matriz, coste);
+        pasos.push_back(1);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x-1, pos_y, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_y > 0 && !matriz[pos_x][pos_y-1].visitado && matriz[pos_x][pos_y-1].Valido){
         //Mover hacia la izquierda
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x, pos_y-1, matriz, coste);
+        pasos.push_back(7);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x, pos_y-1, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
     if(pos_x > 0 && pos_y > 0 && !matriz[pos_x-1][pos_y-1].visitado && matriz[pos_x-1][pos_y-1].Valido){
         //Mover hacia arriba y a la izquierda
         explorados++;
-        llega_al_final = llega_al_final || maze_bb(pos_x-1, pos_y-1, matriz, coste);
+        pasos.push_back(8);
+        camino.push_back(make_pair(pos_x, pos_y));
+        llega_al_final = maze_bb(pos_x-1, pos_y-1, matriz, coste, pasos, camino) || llega_al_final;
+        camino.pop_back();
+        pasos.pop_back(); // Deshacemos el último paso
     }
 
     matriz[pos_x][pos_y].visitado = false;
 
     if(!llega_al_final){
+        coste -= matriz[pos_x][pos_y].valor;
         prometedor_descartado++;
     }
-    //n_actual.coste = 0;
-    //n_actual.cota_positiva = max(dim_x-1-pos_init_x, dim_y-1-pos_init_y);
 
-    //cout<<n_actual.cota_positiva<<endl;
-
-    //visitados++;
-    //explorados++;
-
-    //if(n_actual.cota_positiva==0){
-        //soluciones++;
-        //mejorPeso = min(mejorPeso, n_actual.coste);
-    //}
     return llega_al_final;
 }
 
@@ -186,14 +263,14 @@ void abrir_fichero(string file_name){
                 nodo.x = i;
                 nodo.y = j;
                 nodo.visitado = false;
-                //nodo.mejor = false;
+                nodo.mejor = false;
                 nodo.valor = valor;
                 nodo.Valido = (valor != 0);
                 //nodo.coste = MAX_VALOR;;
 
                 nodo.cota_positiva = max(dim_x-1-i, dim_y-1-j);
 
-                cota_pesimista += nodo.Valido ? 1 : 0;
+                cota_pesimista += nodo.Valido ? nodo.valor : 0;
 
                 matriz[i][j] = nodo;
 
@@ -202,13 +279,18 @@ void abrir_fichero(string file_name){
 
         file.close();
 
-        mostrarmatriz(matriz);
+        //mostrarmatriz(matriz);
 
         int pos_init_x=0;
         int pos_init_y=0;
-        int coste_inicial = 0;//matriz[pos_init_x][pos_init_y].valor;
-        maze_bb(pos_init_x, pos_init_y, matriz, coste_inicial);
+        int coste_inicial = 0;
+        vector<int> pasos;
+        vector<pair<int, int> > camino;
+        clock_t start_time = clock();
+        maze_bb(pos_init_x, pos_init_y, matriz, coste_inicial, pasos, camino);
+        clock_t end_time = clock();
         printf("Mejor peso: %d\n", mejorPeso);
+        cout<<(end_time - start_time) * 1000.00 / (double)CLOCKS_PER_SEC << " seconds" << endl;
         //vector< vector<int>> camino(dim_n,vector<int>(dim_m));
         //vector< vector<int>> optimista(dim_n,vector<int>(dim_m));
 
@@ -220,11 +302,14 @@ void abrir_fichero(string file_name){
 
         //cout<<tiempo<<endl;
         
-        /*if(mejorPeso!=0){
+        if(mejorPeso!=0){
             if(p2D){
+                cout<<"Mejor camino: "<<endl;
+                //mejorcamino(matriz);
+                cout<<"Mejor camino: "<<endl;
                 dibujar_p2D(matriz);
             }
-        }*/
+        }
         
         /*if(p){
             if(mejorPeso==0){
