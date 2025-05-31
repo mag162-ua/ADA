@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility> // Para std::pair
 #include <ctime>
+#include <cmath> // Para sqrt
 
 
 using namespace std;
@@ -31,7 +32,6 @@ int soluciones_actualizadas = 0;
 int soluciones_cpesimista = 0;
 
 int cota_pesimista = 0;
-int a = 0;
 
 struct Nodo{
     int valor; //Valor del nodo
@@ -112,9 +112,17 @@ void dibujar_p2D(const vector<vector<Nodo> > &matriz){
     }
 }
 
-bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vector<int> &pasos/*, vector<pair<int, int> > &camino*/){
+void mostrar_pasos(){
+    cout<<"<";
+    for(int i=0;i<mejorPasos.size();i++){
+        cout<<mejorPasos[i];
+    }
+    cout<<">"<<endl;
+}
+//USO DE RECURSIÓN PURA
+/*bool maze_bb(int pos_x, int pos_y, vector<vector< Nodo> > &matriz, int coste, vector<int> &pasos){
 
-    //Nodo n_actual = matriz[pos_x][pos_y];
+
     visitados++;
 
     if(!matriz[pos_x][pos_y].Valido){
@@ -156,7 +164,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(4);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x+1, pos_y+1, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x+1, pos_y+1, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -165,7 +173,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(5);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x+1, pos_y, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x+1, pos_y, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -174,7 +182,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(3);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x, pos_y+1, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x, pos_y+1, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -183,7 +191,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(2);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x-1, pos_y+1, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x-1, pos_y+1, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -192,7 +200,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(6);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x+1, pos_y-1, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x+1, pos_y-1, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -201,7 +209,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(1);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x-1, pos_y, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x-1, pos_y, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -210,7 +218,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(7);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x, pos_y-1, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x, pos_y-1, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -219,7 +227,7 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
         explorados++;
         pasos.push_back(8);
         //camino.push_back(make_pair(pos_x, pos_y));
-        llega_al_final = maze_bb(pos_x-1, pos_y-1, matriz, coste, pasos/*, camino*/) || llega_al_final;
+        llega_al_final = maze_bb(pos_x-1, pos_y-1, matriz, coste, pasos) || llega_al_final;
         //camino.pop_back();
         pasos.pop_back(); // Deshacemos el último paso
     }
@@ -232,7 +240,65 @@ bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vec
     }
 
     return llega_al_final;
-}
+}*/
+
+// USO DE RECURSIÓN ITERATIVA
+/*const int mov_x[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+const int mov_y[8] = { 0,  1, 1, 1, 0, -1, -1, -1};
+const int directions[] = {4, 3, 5, 2, 6, 8, 1, 7}; // Direcciones correspondientes a los cambios
+
+bool maze_bb(int pos_x, int pos_y, vector<vector<Nodo> > &matriz, int coste, vector<int> &pasos){
+    if(!matriz[pos_x][pos_y].Valido) {
+        no_factibles++;
+        return false;
+    }
+    if(pos_x == dim_x - 1 && pos_y == dim_y - 1) {
+        hojas++;
+        if(coste + matriz[pos_x][pos_y].valor < mejorPeso) {
+            mejorPeso = coste + matriz[pos_x][pos_y].valor;
+            mejorPasos = pasos;
+            soluciones_actualizadas++;
+        }
+        if (mejorPeso < cota_pesimista) {
+            cota_pesimista = mejorPeso;
+            soluciones_cpesimista++;
+        }
+        return true;
+    }
+
+    visitados++;
+    matriz[pos_x][pos_y].visitado = true;
+
+    for(int i = 0; i < 8; i++) {
+        int new_x = pos_x + mov_x[directions[i] - 1];
+        int new_y = pos_y + mov_y[directions[i] - 1];
+        bool sigue = false;
+        
+        if(new_x < 0 || new_x >= dim_x || new_y < 0 || new_y >= dim_y || matriz[new_x][new_y].visitado) {
+            continue;
+        }
+        if(!matriz[new_x][new_y].Valido) {
+            no_factibles++;
+            continue;
+        }
+
+        if (matriz[new_x][new_y].cota_positiva + coste + matriz[new_x][new_y].valor < mejorPeso) {
+            explorados++;
+            
+            pasos.push_back(directions[i]);
+
+            maze_bb(new_x, new_y, matriz, coste + matriz[new_x][new_y].valor, pasos);
+
+            matriz[new_x][new_y].visitado = false;
+            pasos.pop_back();
+        } else {
+            no_prometedores++;
+        }
+    }
+    matriz[pos_x][pos_y].visitado = false;
+    return false;
+}*/
+
 
 void abrir_fichero(const string file_name){
 
@@ -261,7 +327,8 @@ void abrir_fichero(const string file_name){
                 nodo.Valido = (valor != 0);
                 //nodo.coste = MAX_VALOR;;
 
-                nodo.cota_positiva = max(dim_x-1-i, dim_y-1-j);
+                nodo.cota_positiva = max(dim_x-1-i, dim_y-1-j); //Heuristica
+                //nodo.cota_positiva = sqrt((dim_x-1-i)*(dim_x-1-i) + (dim_y-1-j)*(dim_y-1-j)); //Euclidia
 
                 cota_pesimista += nodo.Valido ? nodo.valor : 0;
 
@@ -297,7 +364,16 @@ void abrir_fichero(const string file_name){
         //cout<<visitados<<" "<<explorados<<" "<<hojas_visitadas<<" "<<descartados_no_factibles<<" "<<descartados_no_prometedores<<endl;
 
         //cout<<tiempo<<endl;
-        
+        cout<<"análisis del laberinto:"<<endl;
+        if(p){
+            if(mejorPasos.size()==0){
+                cout<<"<0>"<<endl;
+            }
+            else{
+                mostrar_pasos();
+            }
+        }
+
         if(mejorPeso!=0){
             if(p2D){
                 cout<<"Mejor camino: "<<endl;
@@ -307,14 +383,7 @@ void abrir_fichero(const string file_name){
             }
         }
         
-        /*if(p){
-            if(mejorPeso==0){
-                cout<<"<0>"<<endl;
-            }
-            else{
-                mostrar_pasos();
-            }
-        }*/
+        
     }
     else{
         cerr<<"ERROR: can't open file: "<<file_name<<endl
